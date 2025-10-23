@@ -12,11 +12,12 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  url: 'https://relock.security',
+  url: 'https://davidrelock.github.io',
   baseUrl: '/',
 
-  organizationName: 'relockid',
-  projectName: 'relock-docs',
+  organizationName: 'davidrelock',
+  projectName: 'davidrelock.github.io',
+  trailingSlash: false,
 
   onBrokenLinks: 'warn',
 
@@ -30,12 +31,12 @@ const config: Config = {
           path: 'docs',
           routeBasePath: 'docs',           // /docs/*
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/relockid/relock-docs/edit/main/',
+          editUrl: 'https://github.com/davidrelock/relock-docs/edit/main/',
         },
         blog: {
           showReadingTime: true,
           feedOptions: { type: ['rss', 'atom'], xslt: true },
-          editUrl: 'https://github.com/relockid/relock-docs/edit/main/',
+          editUrl: 'https://github.com/davidrelock/relock-docs/edit/main/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
