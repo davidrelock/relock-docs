@@ -43,7 +43,6 @@
 
 .ctaPrimary {
   color: #0b0f14 !important;
-  background: linear-gradient(180deg, var(--relock-primary), var(--relock-primary-600));
   border: none;
   box-shadow: 0 8px 32px rgba(157,255,0,0.2);
   font-weight: 800;
