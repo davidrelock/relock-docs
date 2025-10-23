@@ -1,0 +1,1302 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Relock Comprehensive Guide
+
+Relock is an advanced software cryptographic authenticator that allows you to add invisible
+strong factor of authentication to your applications. It provides an extra layer of security directly
+in the browser, without adding friction for your users. It covers all identities in a single roll-out
+and was designed to comply with strict regulatory requirements for **AAL2/AAL3** and Strong
+Customer Authentication.
+
+The system uses cryptographic one-time keys that are renewed and verified on demand, ensuring
+that every access and even every user interaction can be independently verified. It is scalable,
+efficient, and configurable for high availability, making it ideal for high assurance and
+uncompromised performance. 
+
+## Executive Summary
+
+Relock’s authentication system has a decisive advantage over other methods: its continuous,
+ephemeral nature . Every request carries fresh, device- and origin-bound cryptographic proof with
+built-in reuse and compromise detection, eliminating the weaknesses of bearer authentication
+(passwords, OTPs, session cookies, bearer tokens).
+
+Whereas today’s strongest authentication methods — passkeys and hardware keys — excel at
+protecting the private key, Relock protects the server–device relationship itself, ensuring there are
+no reusable credentials for an attacker to walk away with.
+
+**What that buys you in practice:**
+
+- High-assurance continuous trust. Every request carries a fresh, origin- and devicebound Signed One-Time Token derived from a rotated, on-demand secret.
+- Phishing resilience out of the box. Session cookie theft, token replay, and AiTM
+phishing are neutralized — session trust cannot be bypassed.
+- Visibility, not just observability. The authentication gateway detects any reuse,
+mismatch, or tampering and triggers immediate server-side detection and session
+termination.
+- Frictionless user experience. No user gesture is required after the initial login;
+protection is invisible, silent, and continuous in the background.
+- Plug-and-play deployment. Lightweight JS agent plus a proxy header — no UX
+overhaul, complex management, hardware rollout, browser extensions, or OS-level
+software.
+- No user adoption hurdles: **just plug it in**.
+
+At its core, Relock shifts security assurance level from a one-time login event to a model of
+**continuous cryptographic trust**, delivering strong posture, phishing resistance, and regulatory
+alignment — all while remaining invisible and frictionless for users. 
+
+## Technical Overview
+
+### The State of Play
+
+At the root of the authentication problem is the fact that usernames are often easy to guess or
+discover, and people are generally very bad at using strong passwords. People also tend to re-use
+the same weak passwords across many different sites. Cybercriminals, armed with a victim’s
+username and password, will often attempt credential stuffing attacks, logging into many different
+sites using the same username/password combination.
+
+To prove that users are valid, authentication systems generally rely on at least one of three
+authentication factors:
+
+- Something you know ( e.g. a username and password )
+- Something you have ( e.g. a second device, possession factor/MFA )
+- Something you are ( e.g. fingerprint or face recognition )
+
+In the presence of increasingly sophisticated phishing methods, using only one authentication
+factor, such as a username/password, is highly problematic.
+
+Many defenders have responded by implementing MFA, which includes an additional factor, such
+as an SMS message or push notification, as an extra step to confirm a user’s identity when logging
+in. By including an additional factor in the authentication process, compromised usernames and
+passwords become much less valuable to cybercriminals.
+
+However, cybercriminals are creative, and they have devised clever ways to bypass authentication
+models that rely on commonly used **bearer credentials**. 
+
+### Bearer Session Model
+
+Today, the vast majority of web services rely on the Bearer model : whoever possesses the right
+secret value is accepted, regardless of how it was obtained or where it is used. This applies to
+both the login stage and the in-session requests. 
+
+#### Login Stage
+
+Passwords, SMS OTPs, and even authenticator app codes (TOTP or push) are bearer secrets.
+Whoever enters the correct value, or presses approve , is treated as the user. Attackers can phish
+these secrets in real time, relay them through a reverse proxy (Adversary-in-the-Middle, AiTM), or
+trick users into approving push requests (push fatigue). 
+
+TODO: Insert Diagram
+
+#### Session Stage
+
+After login, servers issue session cookies or bearer tokens. Possession of this cookie/token alone
+is enough to act as the authenticated user until the token expires. If stolen through phishing,
+malware, or man-in-the-middle attacks, the attacker can bypass all login protections — including
+MFA — because the server cannot distinguish a legitimate origin of a bearer token.
+
+TODO: Insert Diagram
+
+#### Why is it Dangerous
+
+Bearer authentication secures only the initial login event. Once an attacker steals a bearer secret
+(whether a password, MFA code, or session token), they can fully bypass protections and
+impersonate the user. This makes bearer tokens and cookies one of the biggest targets in modern
+account-takeover attacks.
+
+### Continuous Cryptographic Trust
+
+In the bearer authentication model, an adversary does not need the user’s credentials to sign in —
+the user effectively hands over an authenticated, ready-to-use bearer artifact.
+
+Relock replaces these reusable artifacts with a per-request cryptographic proof of the
+origin-bound relationship between client and server. Instead of “whoever has the token can act as the
+user,” every request must carry a fresh **Signed cryptographic One-Time Token (SOTT)**.
+
+TODO: Insert Diagram
+
+Bearer authentication trusts possession of a secret value; Relock trusts the origin-bound,
+continuous cryptographic synchronization between the client and the server. The SOTT token is
+derived from secret material that never leaves the client device or its origin. If the derived token
+payload matches the server-side secret, and the cryptographic signature is valid, the single
+request is granted. 
+
+TODO: Insert Diagram
+
+Each time a SOTT token is verified, the server may trigger a key rotation. This ensures the secret
+material cannot be reused outside the legitimate origin or without the server’s knowledge. In
+simple terms: even if someone gains access to the secret, attempting to use it will immediately
+expose the attack. There cannot be any third-party actor between the client and the server (or
+multiple versions of the synchronization key).
+
+This feature provides continuous visibility as well as observability . During a session, any attempt
+to reuse the secret material triggers a key collision and immediate session termination, making
+session hijacking an extremely difficult task for an adversary. 
+
+### Cryptographic Design
+
+Behind the scenes, Relock combines public-key cryptography (PKI) with symmetric key material.
+Trust is bound along four axes: **device, server, origin**, and **time** (rotation cadence). The core of
+this system is a symmetric key — Relock Tesseract — that powers the derivation of per-request
+tokens.
+
+The Tesseract is not just random bytes of entropy. It is a symmetric key wrapped in a mechanism
+of interdependent encryption . Neither the client nor the server ever holds the raw value directly: 
+
+- Server-side: the secret is encrypted with a random key that exists only on the client-side.
+- Client-side: the secret is encrypted with a random key that exists only on the server-side.
+- Binding: the client-side encryption is bound to the browser’s fingerprint and an extra
+randomization key delivered from the server.
+- In-memory only: both client and server access the raw secret material only in device memory; it
+is never stored in unencrypted form. 
+
+Both client and server also hold Ed25519 key pairs for the control plane. Each side signs messages
+with its private key and verifies them with the other side’s pinned public key. This provides mutual
+authentication and message integrity, independent of the Tesseract-derived SOTTs. On the client
+side, the Ed25519 signature key material is additionally randomized in storage, ensuring that it
+cannot be directly extracted or reused outside the legitimate browser environment.
+
+This design ensures that neither side can reconstruct or use the Tesseract in isolation. Only when
+the legitimate browser and the Relock gateway are synchronized can the material be unlocked to
+derive a fresh **Signed One-Time Token (SOTT)**. Immediately after use, the Tesseract rotates,
+ensuring that no reusable artifact exists for attackers. 
+
+### Continuous Access Evaluation (CAEP)
+
+Relock does not just align with CAEP principles — it can act as a **CAEP transmitter**. Whenever
+in-session events occur (e.g., secret material reuse, rotation, mismatch, or session termination),
+Relock can emit continuous evaluation signals to relying parties or upstream identity providers.
+
+This means Relock provides both:
+
+**Enforcement**: Every request is cryptographically validated; invalid or replayed tokens are
+blocked in real time.
+
+**Event transmission**: In-session state changes are published as CAEP events, allowing
+downstream systems to immediately react (e.g., revoke access tokens, flag the account, trigger
+reauthentication). 
+
+By serving as a CAEP transmitter, Relock integrates naturally into Zero Trust ecosystems. It ensures
+not only that untrusted requests are blocked locally, but also that other connected services are
+informed of the compromise without delay. 
+
+### Relock System Properties
+
+- **Device & origin binding**: Proofs are valid only from the enrolled browser sandbox and origin
+that negotiated the Tesseract.
+- **Server interdependence**: The gateway holds the authoritative version; any mismatch or reuse
+attempt fails verification.
+- **High-frequency rotation**: Keys rotate at session start and on a policy-defined cadence (e.g., per
+request or at fixed intervals).
+- **Ephemeral tokens**: SOTTs exist only in memory and are single-use, with replay prevention
+enforced by the gateway by default.
+- **Visibility signals**: Any unauthorized reuse or version drift immediately triggers server-side
+detection, rejection, and event signal.
+- **In-memory only**: Both client and server access the raw Tesseract material only in device
+memory; it is never stored in unencrypted form.
+- **CAEP transmitter**: In-session events (reuse, mismatch, termination) can be emitted as
+Continuous Access Evaluation Protocol (CAEP) signals to inform upstream identity systems or
+relying parties. 
+
+### Core Technical Characteristics
+
+| Characteristic        | Relock Tesseract                                                                 |
+| --------------------- | -------------------------------------------------------------------------------- |
+| **Key location**      | Protected by OS keychain and ACL permissions, isolated by the browser sandbox; server-side encrypted and decrypted in memory only |
+| **Extractability**    | Non-extractable by default; strengthened by memory-only server-delivered random material and browser fingerprint binding |
+| **Material rekeying** | Enforced at session start; configurable at per-request granularity or at fixed time intervals |
+| **Session hijacking** | The gateway enforces single-use SOTTs; any reuse attempt is rejected              |
+| **Compromise signals**| Server-side detection of invalid or mismatched material; unauthorized attempts trigger immediate session termination |
+| **Server-side theft** | Not applicable — server’s symmetric key is useless without the client contribution; both sides are required |
+| **Origin binding**    | Enforced by the browser sandbox and validated by Relock’s authentication gateway on each request |
+| **Phishing resistance** | Continuous, request-level protection beyond login; out-of-origin requests are inherently detected |
+| **Human verification** | Not inherent; can be combined with passkeys or other MFA during login            |
+
+### Client-Side Secret Storage
+
+By default, browsers do not store authentication data as unencrypted files. They rely on the
+operating system’s ACL permissions and secure storage (e.g. Keychain on macOS, DPAPI on
+Windows, Keystore on Android), combined with origin-based process sandboxing. This means data
+access is restricted to the browser process itself.
+
+In addition, the client-side sotrage is browser-fingerprint bound and incorporates in-memory-only,
+server-side stored randomization nonces. Even if storage is extracted, it does not guarantee
+successful use on another device or environment. Extraction of this secret material are far less
+effective, as an attacker would need to mimic the original device enviroment and still connect to
+the Relock authentication gateway for the material to be accepted (expose the use). 
+
+### Security Assurance Under Fatal Compromise
+
+It is natural to assume that hardware tokens or platform passkeys provide stronger assurance
+than a browser-bound mechanism such as Relock. In reality, the **security model converges** when
+we consider a device that has fallen into a fatal state of compromise (root- or kernel-level
+malware).
+
+- **Passkeys** The private key is sealed in a secure enclave or TPM and cannot be exported. However,
+once the user provides a biometric or PIN gesture, malware with OS control can still invoke the
+enclave APIs to sign arbitrary challenges on the user’s behalf.
+- **Hardware tokens** The key material never leaves the USB/NFC token. Yet after the user touches
+the key, malware can relay signing requests through the normal OS interfaces. The token cannot
+distinguish a legitimate browser call from a malicious one.
+- **Relock (Tesseract)** The secret material is bound to the browser sandbox, OS keychain, and
+server interdependence. During use it must be decrypted in memory, so root-level malware
+could also access it. Like passkeys or hardware keys, Relock cannot guarantee secrecy on a fully
+owned device.
+
+In a device compromise scenario, all three technologies can be abused in real time. Passkeys and
+hardware tokens excel at keeping their keys non-extractable, but malware can still use them once
+unlocked. Relock’s assurance is similar in that regard—but it differs in what happens next:
+**Relock never produces a long-lived artifact**. Each proof is one-time-use and replay-protected, so
+compromise is self-limiting and detectable , whereas sessions established with passkeys or
+hardware tokens can still be hijacked and replayed invisibly.
+
+### Method Comparison
+
+| Characteristic      | Relock Tesseract                 | Passkey                 | Hardware Key          |
+| ------------------- | -------------------------------- | ----------------------- | --------------------- |
+| **Key storage**     | Keychain + server nonce          | Secure enclave          | Hardware chip         |
+| **Extractability**  | Hardened + ephemeral             | Non-extractable         | Non-extractable       |
+| **Rekeying**        | High-frequency rotation          | Static private key      | Static private key    |
+| **Origin binding**  | Request-level                    | Login-level only        | Login-level only      |
+| **Device binding**  | Sandbox + Fingerprint            | Limited (platform bound) | Absolute             |
+| **Session hijacking** | Resilient                      | Vulnerable via stolen cookie | Vulnerable via stolen cookie |
+| **Compromise signals** | Discoverable                  | None                    | None                  |
+| **Server-side risk** | Not applicable                  | Cloud-based if synced   | Not applicable        |
+| **Phishing resistance** | Continuous per-request       | At login only           | At login only         |
+| **Human verification** | Optional (MFA/passkey)        | Built-in biometric      | Built-in biometric    |
+
+### Regulatory Alignment
+
+Relock is designed not only as a strong security control, but also as an enabler for organizations
+facing demanding compliance requirements. Because Relock replaces bearer tokens with
+continuous, per-request cryptographic proofs, it directly addresses common mandates for strong
+authentication, session integrity, and compromise detection.
+
+#### PSD2 / Strong Customer Authentication (SCA)
+Requires multi-factor authentication and dynamic
+linking of authentication to the transaction context. Relock enforces per-request, origin- and
+device-bound Signed One-Time Tokens (SOTT) . This satisfies the dynamic linking requirement,
+since each proof is unique, non-reusable, and cryptographically tied to the transaction.
+
+#### NIS 2 Directive (EU)
+Focuses on resilience of essential/critical services, including incident
+detection and prevention of credential misuse. Relock provides real-time misuse detection: any
+replay, mismatch, or unauthorized use of secret material is blocked and logged. This supports NIS
+2 requirements for monitoring, detection, and rapid response.
+
+#### NIST Digital Identity Guidelines (SP 800-63B)
+Defines Authenticator Assurance Levels (AAL).
+Relock supports **AAL2/AAL3** by providing device-bound, origin-bound, and replay-resistant
+authenticators. Continuous proof-of-possession strengthens assurance throughout the session, in
+line with NIST’s guidance on verifier compromise resistance.
+
+#### SOC 2 (Trust Services Criteria)
+Requires strict access controls, monitoring, and detection of
+unauthorized use. Relock enforces continuous validation on every request, preventing
+unauthorized reuse. Unauthorized attempts are blocked and generate auditable events,
+supporting SOC 2 requirements for security and monitoring.
+
+#### PCI DSS v4.0 (Payment Industry)
+Requires MFA for administrative and user access to cardholder
+data, along with secure session management. Relock ensures that no session artifact can be
+replayed. Each request is tied to a cryptographic proof, reducing account takeover and session
+hijacking risks.
+
+#### HIPAA (US Healthcare)
+Requires safeguards to protect electronic protected health information
+(ePHI) against unauthorized access. Relock enforces continuous cryptographic validation of user
+sessions, preventing hijacking of healthcare portals and unauthorized exposure of sensitive data.
+
+#### ISO/IEC 27001 / 27002
+Global standards for information security management systems (ISMS).
+Relock provides strong technical controls for access security, session integrity, and incident
+detection, aligning with multiple Annex A controls (e.g. A.9, A.12).
+
+#### CIS Controls v8
+Best practices for enterprise defense. Relock directly supports Control 5 (Account
+Management) and Control 6 (Access Control Management) by enforcing per-request, device- and
+origin-bound authentication beyond login.
+
+#### FFIEC Guidance (US Banking)
+Requires strong authentication for consumer online banking portals.
+Relock mitigates account takeover risks by preventing authentication bypass via session-token
+replay — a key threat in financial services.
+
+#### CISA Zero Trust Maturity Model (US Federal)
+Emphasizes continuous authentication and device
+validation, not just one-time login. Relock enforces per-request validation, proving device trust on
+every request and enabling continuous verification within a Zero Trust framework.
+
+#### GDPR (EU)
+Requires organizations to protect personal data with state-of-the-art security controls.
+Relock ensures sessions cannot be hijacked or replayed. Any attempt to misuse secret material is
+detected in real time, reducing the risk of personal data breaches.
+
+#### FIPS 140-3 (US Federal)
+Defines cryptographic module validation for federal use. Relock leverages
+modern, standardized algorithms (e.g. Ed25519), suitable for deployment in environments with
+FIPS-aligned requirements.
+
+### Compliance Matrix
+
+Relock supports compliance with a wide range of regulatory and industry frameworks. The matrix
+below maps key requirements to Relock’s enforcement capabilities. 
+
+| Framework              | Key Requirement                                   | How Relock Addresses It |
+| ---------------------- | ------------------------------------------------- | ----------------------- |
+| **PSD2 / SCA (EU)**    | Requires MFA and dynamic linking of transactions. | Relock issues per-request SOTTs, origin- and device-bound, fulfilling the “dynamic linking” requirement. |
+| **NIS 2 (EU)**         | Resilience and detection of cyber incidents across critical infrastructure. | Relock detects secret misuse in real time, rejects replay, and logs unauthorized attempts. |
+| **NIST SP 800-63B (US)** | Defines Authenticator Assurance Levels (AAL2/AAL3). | Relock provides device-bound, non-replayable proofs, supporting continuous assurance beyond login. |
+| **SOC 2 (Global)**     | Trust principles: security, availability, confidentiality. | Relock enforces continuous session validation and generates auditable events for unauthorized activity. |
+| **PCI DSS v4.0 (Payment)** | Requires MFA and strong session management for cardholder data. | Relock ensures session control with cryptographic replay prevention and per-request validation. |
+| **HIPAA (US Healthcare)** | Protects electronic health data (ePHI) against unauthorized access. | Relock prevents session hijacking and ensures cryptographic integrity of access to sensitive records. |
+| **ISO/IEC 27001**      | Global standard for ISMS.                         | Relock provides strong technical controls for access security and session integrity, aligned with ISO Annex A controls. |
+| **CIS Controls v8**    | Best practices for enterprise defense.            | Relock supports Controls 5 & 6 (Account/Access Management) with per-request device-origin proofs. |
+| **FFIEC (US Banking)** | Requires strong authentication for online banking portals. | Relock prevents account takeover by blocking cookie/session replay attacks. |
+| **CISA Zero Trust (US)** | Requires continuous authentication and device validation. | Relock enforces per-request, device- and origin-bound proofs, aligning with Zero Trust requirements. |
+| **GDPR (EU)**          | Requires state-of-the-art protection of personal data. | Relock ensures sessions cannot be hijacked or replayed; misuse is detected in real time. |
+| **FIPS 140-3 (US Federal)** | Cryptographic module validation standard for federal systems. | Relock uses modern, standards-based cryptography (Ed25519), suitable for FIPS-aligned environments. |
+
+### Technical Summary
+
+Relock closes the major gaps of the bearer model — cookie or token replay and adversary-in-the-middle
+(AiTM) attacks — while providing real-time signals of misuse. The remaining residual risk is
+concentrated in the areas that no crypto scheme can fully eliminate: same-origin code execution
+(XSS) and full endpoint compromise.
+
+When paired with strict XSS hygiene, a strong origin/TLS posture, and careful server-side binding
+of SOTTs to intent, Relock delivers a level of assurance **comparable to passkeys or hardware keys**
+— with the added benefit of continuous protection not only within a single session, but across the
+entire server–client relationship lifetime. 
+
+## Deployment Options
+
+Relock Invisible MFA can be integrated in three different scenarios. The choice depends on your
+use case, the desired user experience, and how often you want to verify users.
+
+### Prerequisites
+
+Before you begin integration, make sure that you have:
+
+- Relock account and access to the Relock Admin Panel.
+- Administrative access to the web application or authentication system.
+- Valid SSL/TLS certificate configured on your domain.
+
+### Redirect-Based Integration (Login Level)
+
+Two integration modes rely on simple redirects. These require no code changes in the protected
+application, but they do display a spinner/loader to the user (so the process is not entirely
+invisible):
+
+#### Simple Deployment (Third-party cloud)
+
+The application redirects the user to the relock.host cloud domain for device verification. The user
+sees a simple spinner/loader and is then returned back to the web application.
+
+#### SameSite Deployment
+
+The application uses a proxy or load balancer rule to mask the redirect, making it appear as
+though verification is taking place on your own domain. Cryptographic keys are stored securely
+within your domain’s browser data.
+
+### JavaScript Agent Integration (Request-level)
+
+A request-level integration requires deploying a lightweight JavaScript library (JS agent) into the
+protected application. In this mode, verification occurs entirely in the background, without the
+user ever seeing any part of the process or a redirect event.
+
+### Brief Summary
+
+The first two modes are suitable for authentication at sign-in flow or during sensitive actions
+where displaying a separate screen with spinner/loader is acceptable. The Agent-based
+integration is best for both sign-in verification and on-demand request confirmation during an
+active session. 
+
+**Simple verification** is limited compared to the SameSite and Agent-based approaches. It cannot
+handle any information about the authenticated user, since it functions as third-party
+authentication without the ability to notify Relock Cloud about sign-in success or sign-out events.
+
+## Simple Integration
+
+We recommend this option for OTP-heavy sign-in flows, particularly when the authentication
+process relies on SMS codes, which are especially vulnerable to phishing attacks. By introducing
+Relock at this stage, you add an extra verification layer before the user even enters their
+credentials. This helps reduce the risk of attackers intercepting SMS-based one-time codes and
+reduces the costs, ensuring that only trusted devices can complete the authentication process.
+
+### Use Case Example
+
+For OTP-heavy login flows, you may want Relock verification to trigger when the user clicks “Sign
+In,” before password entry. Based on Relock’s response, you could redirect the user either to a
+password-only flow or to a password + OTP flow.
+
+### New Cloud Relock Gateway
+
+1. Create an account and sign in at: `https://relock.host`
+2. Define and add the domain name protected by a new Relock gateway, e.g.: `example.com`
+3. Configure your Relock Cloud subdomain (Wildcard ID): `example.relock.host`
+4. Configure return routes (URLs) for completed verification (in the Core settings tab):
+    - Known/ **Trusted** → `https://example.com/password_only`
+    - New/ **Fresh** → `https://example.com/send_sms_otp`
+5. Get a public key for verifying Relock responses (in the Gateway Access Keys tab).
+
+### Web Application Changes
+
+When a user triggers a sign-in action (clicks the sign-in button), redirect the user to the
+authentication gateway: 
+
+```
+https://example.relock.host/<RANDOM_UUID>
+```
+
+The gateway verifies the user’s device identity, confirms and rotates cryptographic keys, and then
+redirects the browser to one of the pre-configured routes (URLs) to trigger the appropriate action.
+
+The redirect back to your application will be sent as a **POST** request containing a cryptographically
+signed Random_UUID, along with additional information about the device. 
+
+### Authentication Flow
+
+1. **Sign-in Triggered** The user is redirected to the third-party cloud authentication gateway hosted at the example.relock.host domain.
+2. **Spinner / Loading Page** Cryptographic keys are verified and rotated in the background. Based on the result of this verification, a redirect back to the web application is triggered.
+3. **Redirect Back to the Web Application**
+
+    Trusted Device → The user proceeds directly to password entry, accompanied by a
+    one-time token and a cryptographic signature proving the device is trusted.
+
+    New Device → A fresh credential is enrolled on the third-party domain. The
+    authentication flow must then continue with an additional factor, such as an OTP
+    code (e.g., password + OTP or email confirmation).
+
+### Response Verification
+
+Always verify Relock’s response signature using Ed25519 with the public key generated in the
+Admin Panel. This ensures that every response truly originates from Relock and has not been
+tampered with in transit. The signature validation step protects your application from replay
+attacks, forged redirects, or malicious third parties attempting to impersonate Relock. The Ed25519
+algorithm is designed to provide strong cryptographic guarantees while remaining lightweight and
+efficient, making it ideal for real-time verification inside your authentication flow. 
+
+### Verifying gateway signature
+
+The snippet below shows a minimal, end-to-end verification of an authentication gateway
+response using an **Ed25519** public key. 
+
+In this example: 
+
+- `X-Key-Transaction` is the exact byte string that was signed (a UUID originally
+provided to the authentication gateway by the web application server).
+- `X-Key-Transaction-Signature` is the **hex-encoded** Ed25519 signature of that UUID,
+after it has been encoded into its raw byte representation. 
+
+```python
+import base64
+import binascii
+from nacl.signing import VerifyKey
+
+transaction = request.form.get('X-Key-Transaction', str())
+signature_hex = request.form.get('X-Key-Transaction-Signature', str())
+
+## GET a public key from Relock Admin panel
+public_key_b64 = "9BvLN49xYMLfUnVLi4ncvdIQHrhEo6/A15EaPHas2B4="
+
+transaction = binascii.unhexlify(transaction)
+signature = binascii.unhexlify(signature_hex)
+public_key = base64.b64decode(public_key_b64)
+
+## Verify signature
+verify_key = VerifyKey(public_key)
+try:
+    verify_key.verify(transaction.encode(), signature)
+except Exception as e:
+    print("Signature invalid:", e)
+```
+
+### Notes and Best Practices
+
+**Verify the exact bytes**: The signed content must match byte-for-byte. If Relock signs a
+canonical payload (e.g., UTF-8 JSON or a UUID string), verify that exact representation
+(same encoding, no whitespace changes). 
+
+**Verify Key sizes**: Ed25519 uses a 32-byte public key and 64-byte signature. Reject
+keys/signatures with unexpected lengths.
+
+## SameSite Integration
+
+This integration makes the Relock spinner/loader appear under **your own domain**, while keeping
+the same logic as the simple redirect option. Cryptographic keys are stored within your domain
+and are bound to the browser’s origin, ensuring they cannot be shared across unrelated sites. 
+
+The major difference in this deployment model is the ability to provide the Relock authentication
+gateway with information about user sign-in and sign-out events. If a user ID is passed to the
+gateway, subsequent verifications will include that ID in the response. This simplifies the
+authentication experience by eliminating the need to prompt the user for their login again. 
+
+Relock gateway will be accessible at:
+
+```
+https://example.com/relock/gateway/<RANDOM_UUID>
+```
+
+To conceal the forwarding to Relock behind your own domain, you need to configure rules in your
+reverse proxy or load balancer. This setup ensures that users always see your company’s domain
+in the browser, even when verification is handled by the Relock cloud service.
+
+The main benefits of this approach are:
+- **First-party cookies**: Because the request appears to originate from your
+domain,Relock can set cookies that are treated as first-party by the browser. This
+makes session management more secure and reliable compared to third-party
+cookies. 
+- **Consistent user experience**: The verification flow feels seamless to users since they
+never leave your domain, even though the authentication process is being proxied to
+Relock in the background. 
+- **Simplified integration**: You don’t need to modify your application logic. Instead, your
+reverse proxy or load balancer forwards requests to Relock whenever the path begins
+with `/relock/`.
+
+### Gateway Wildcard Header
+
+When deploying Relock under your own domain, you must provide a **UUID identifier** for the
+gateway in each request header. This UUID serves as a unique key that binds requests from your
+domain to the correct gateway configuration in Relock Cloud.
+
+You can find the dedicated UUID for your gateway in the **Gateway Keys** tab of the Relock Admin
+Panel. The UUID must be attached to every proxied request to Relock.
+
+To simplify this, we recommend automating the process by adding a header rule to your reverse
+proxy configuration (e.g., `X-Key-Wildcard: <gateway-uuid>` ). This ensures that all traffic routed
+through **/relock/** will consistently include the required gateway identifier without any changes
+to your application code.
+
+#### Redirect Routes Note
+
+In this integration option, the redirect routes must be configured **exactly the same** as in the
+simple integration. The Relock gateway enforces strict origin verification during its internal checks.
+If the redirect routes do not match the expected origin of the requests, the device will always be
+treated as new (or “fresh”), even if it is actually trusted.
+
+Therefore, you must provide a **complete URL including the domain nam**e when configuring return
+routes in the Relock Admin Panel.
+
+Configure the return routes (URLs) in the Relock Admin Panel as follows: 
+
+- Known/ **Trusted** device → `https://example.com/require_password_only`
+- New/ **Fresh** device → `https://example.com/make_idv_authentication`
+
+### Reverse-proxy configuration
+
+Below you can find example configurations for **Nginx** and **Apache** that redirect all requests where
+path starting with `/relock/` to the Relock gateway on third-party server at _relock.host_
+
+**Nginx** Example:
+
+```nginx
+location /relock/ {
+  proxy_pass https://relock.host/;
+  proxy_set_header Host relock.host;
+  proxy_set_header X-Key-Wildcard "your-unique-uuid";
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+**Apache** Example:
+
+:::note
+Make sure `mod_proxy` and `mod_headers` are enabled:
+:::
+
+```bash
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod headers
+sudo systemctl restart apache2
+```
+
+Then add to your VirtualHost:
+
+```xml
+<VirtualHost *:443>
+  ServerName example.com
+
+  SSLProxyEngine On
+  ProxyRequests Off
+
+  <Location /relock/>
+    ProxyPass https://relock.host/relock/
+    ProxyPassReverse https://relock.host/relock/
+    RequestHeader set X-Key-Wildcard "your-unique-uuid"
+  </Location>
+</VirtualHost>
+```
+
+### SameSite Login Hook
+
+When integrating a Single-Page Application (SPA) where the frontend stores sensitive user data,
+you can log the user directly into the Relock gateway with a simple fetch request. This approach
+allows the SPA to establish the **device owner** within the gateway without requiring any redirects or
+additional friction.
+
+For non-SPA web applications, you must additionally provide an **HTTP_ONLY session cookie** with is
+included to your backend request by a browser. Locate the `X-Key-Session` cookie value and
+include it as a JSON attribute in the request. In SPA applications that call the gateway directly from
+the frontend, this cookie is automatically included.
+
+```python title="Python Flask example"
+request.cookies.get('X-Key-Session', str())
+```
+
+In this integration mode, an explicit logout call is not required. The session is automatically
+terminated once the user closes the browser tab, ensuring that no sensitive data persists beyond
+the active browsing session.
+
+Below you can find the javascript example of API call for gateway user login and device token and
+signature veryfication. The `/relock/login` request verifies the user device signature and validates
+the token’s authenticity and assign the device owner. This serves as an **additional safeguard** to
+confirm the legitimacy of the gateway response, separate from the server-side Ed25519 signature
+validation that your application should always perform. Once user is asigned to the device the
+gateway will include information about the device owner into the response.
+
+Javascript example API call for `/relock/login`: 
+
+The required token and signature are provided in the gateway’s response after spinner (loader
+bihind) verification. Each gateway POST response includes `X-Key-Token` and `X-Key-Signature` in
+the response body.
+
+```js
+async function login(user = String('<some_user_id_or_hash>'),
+  email = String('<user_email>'),
+  token = String('<device_token>'),
+  signature = String('<device_signature>'),
+  xsid = String('<HTTP_ONLY_cookie_value>')) {
+    
+  return await fetch("/relock/login", {
+    method: "POST",
+    credentials: 'include',
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      "X-Key-Token": token,
+      "X-Key-Signature": signature,
+      "X-Key-Session": xsid,
+      "user": user,
+      "email": email
+    })
+  }).then((res) => res.json());
+}
+```
+
+## JavaScript Agent Integration
+This integration mode provides fully invisible, **behind-the-scenes** device identity verification. The
+JavaScript agent automatically starts a Relock gateway session and rotates the cryptographic keys
+during session lifetime.
+
+Key rotation is enforced both at the beginning of the session and periodically throughout its
+lifetime. Rotation at session start is enforced and required, durring the session liftime rekeying is
+enforced at fixed time intervals or even at every single request, depending on your security
+requirements. The frequency is configurable, ranging from every few minutes to each request for
+maximum assurance.
+
+Because this process runs silently in the background, users experience no interruptions or
+redirects, while the application maintains continuous device verification and strong session
+protection.
+
+### Reverse Proxy Setup (Required)
+Your reverse proxy must route all requests from `/relock/*` to `https://relock.host/` and include
+the header `X-Key-Wildcard` containing your unique client UUID. This UUID binds the requests to
+your specific gateway and ensures that Relock can properly verify the origin of each request.
+For security and reliability, make sure this header is added automatically to every forwarded
+request. Without it, the Relock gateway will reject or treat the session as untrusted.
+
+Detailed reverse proxy configuration examples (for both **Nginx** and **Apache** ) are provided earlier
+in this document. Use those examples as a reference to set up your proxy correctly.
+
+### HTTP Strict Transport Security (HSTS)
+Relock depends on the integrity of the browser’s origin enforcement. To prevent downgrade or
+redirection attacks, it is strongly recommended to enable **HTTP Strict Transport Security (HSTS)**
+on all domains that integrate Relock.
+
+HSTS instructs browsers to:
+- Always connect via HTTPS (never downgrade to HTTP).
+- Cache this rule for a specified duration.
+- Refuse connections with invalid or self-signed certificates.
+
+**Recommended configuration:**
+
+```html
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+```
+
+Where:
+- `max-age=63072000` enforces HTTPS for two years.
+- `includeSubDomains` applies the rule to all subdomains.
+- `preload` allows the domain to be added to browser preload lists for protection from the very
+first request.
+
+Using HSTS ensures that Relock’s origin-bound tokens and cryptographic proofs cannot be
+intercepted or stripped of TLS protection by downgrade attacks, DNS manipulation, or man-in-themiddle proxies.
+
+### Relock.js Library Integration
+In this integration option, a lightweight **Relock JavaScript SDK (``relock.js``)** is required. The
+JavaScript file should be included in the `<head>` section of every page generated by your web
+application server to ensure it runs consistently.
+
+```html
+<script src="/relock/relock.js" async></script>
+```
+
+The behavior of the Relock agent differs slightly between Multi-Page Applications **(MPAs)** and
+Single-Page Applications **(SPAs)**. The distinction is important, because MPAs automatically reload
+the `<head>` on each navigation, while SPAs typically render views dynamically without reloading
+the entire page.
+
+The following sections explain the differences and provide guidance for integrating Relock
+depending on your application’s architecture.
+
+### Content Security Policy (CSP) with Nonces
+To keep the Relock JavaScript agent safe from injection and supply-chain risks, we **strongly recommend**
+deploying a **CSP with per-request nonces**. This allows the browser to run only scripts
+you explicitly authorize for that page load, and it pairs well with Relock’s request-level
+cryptography.
+
+- Block inline/script-injected code (XSS) while allowing your vetted scripts.
+- Authorize relock.js via a fresh **nonce** on every response.
+- Remove *‘unsafe-inline’* and avoid inline event handlers.
+
+
+#### Recommended CSP (header)
+Set a CSP header on every HTML response with a **unique, unpredictable nonce**:
+
+```js
+Content-Security-Policy:
+    default-src 'self';
+    script-src 'self' 'nonce-{RANDOM_NONCE}' 'strict-dynamic';
+    connect-src 'self' https://relock.host;
+    style-src 'self';
+    img-src 'self' data:;
+    frame-ancestors 'none';
+    base-uri 'none';
+    object-src 'none';
+    upgrade-insecure-requests;
+    require-trusted-types-for 'script';
+```
+
+:::note
+Replace \{RANDOM_NONCE\} with a cryptographically strong random value per response. -
+`'strict-dynamic'` lets nonce-approved scripts load other same-origin scripts without expanding
+the attack surface. - Add other endpoints you call to `connect-src` (e.g., your own `/relock/*` if
+reverse-proxied on your domain).
+:::
+
+#### Authorizing relock.js with the nonce
+Embed your script tag with the **same nonce value** placed in the header:
+
+```html
+<!-- relock.js served from your domain (reverse proxy to Relock Cloud) -->
+<script src="/relock/relock.js" nonce="{{CSP_NONCE}}" async></script>
+<!-- optional: minimal bootstrap that must run inline -->
+<script nonce="{{CSP_NONCE}}">
+  window.addEventListener('X-Key-View-Change', () => {/* ... */});
+</script>
+```
+
+:::important
+Do **not** use inline `onClick=` etc. Prefer `addEventListener` in nonce-authorized
+blocks. - Do not include 'unsafe-inline' in script-src —that would defeat the purpose.
+:::
+
+#### Generating the nonce (server examples)
+
+<Tabs>
+  <TabItem value="node" label="Node/Express">
+    ```js
+    import crypto from "node:crypto";
+
+    export function csp(req, res, next) {
+      const nonce = crypto.randomBytes(16).toString("base64");
+      res.locals.cspNonce = nonce;
+      res.setHeader("Content-Security-Policy",
+        [
+          "default-src 'self'",
+          `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+          "connect-src 'self' https://relock.host",
+          "style-src 'self'",
+          "img-src 'self' data:",
+          "frame-ancestors 'none'",
+          "base-uri 'none'",
+          "object-src 'none'",
+          "upgrade-insecure-requests",
+          "require-trusted-types-for 'script'"
+        ].join("; ")
+      );
+      next();
+    }
+    ```
+
+    Then in your template:
+    ```js
+    <script src="/relock/relock.js" nonce="{{cspNonce}}" async></script>
+    ```
+  </TabItem>
+  <TabItem value="python" label="Python/Flask">
+    ```python
+    import os, base64
+    from flask import g, make_response, render_template
+
+    def make_nonce():
+      return base64.b64encode(os.urandom(16)).decode()
+
+    @app.after_request
+    def add_csp(response):
+      nonce = getattr(g, "csp_nonce", None) or make_nonce()
+      g.csp_nonce = nonce
+      csp = (
+        "default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; "
+        "connect-src 'self' https://relock.host; "
+        "style-src 'self'; img-src 'self' data:; "
+        "frame-ancestors 'none'; base-uri 'none'; object-src 'none';"
+        "upgrade-insecure-requests; require-trusted-types-for 'script';"
+      )
+      response.headers["Content-Security-Policy"] = csp
+      return response
+    ```
+
+    And in Jinja:
+    ```html
+    <script src="/relock/relock.js" nonce="{{ g.csp_nonce }}" async></script>
+    ```
+  </TabItem>
+</Tabs>
+
+#### SPA considerations
+Make sure your framework/template passes the **nonce** to any runtime that adds scripts (e.g.,
+hydration, lazy bundles) or adopt `'strict-dynamic'` so nonce-blessed entry points can load their
+children.
+
+Avoid dynamically injecting script text; prefer module/script URLs under your origin.
+
+If you use Trusted Types, create a simple policy for framework bootstraps and set
+`require-trusted-types-for 'script'`.
+
+#### Subresource Integrity (SRI)
+
+If any script is loaded from **another origin**, add **SRI** hashes in addition to CSP nonces.
+
+If you reverse-proxy Relock under **your** origin (recommended), SRI is optional because
+`script-src 'self' 'nonce-...'` already constrains execution to your assets. 
+
+#### Common pitfalls checklist
+
+- Do not send different nonces in the header and in `<script>` tags.
+- Do not include `'unsafe-inline'` or `'unsafe-eval'` in `script-src`.
+- Remove inline handlers ( `onclick=` etc.) and replace with delegated listeners.
+- Keep `connect-src` tight; include only your API hosts and `https://relock.host` (or your proxied path).
+- Use HSTS (with preload) and disallow mixed content to preserve origin guarantees.
+
+#### Why this matters
+
+Relock blocks session hijacking and replay, but **same-origin script execution** (XSS, malicious
+extension injecting into your DOM, or compromised third-party JS) could still invoke the legitimate
+agent. A **strict CSP with nonces** materially reduces that risk by ensuring only the scripts you
+explicitly bless per request can run, keeping the Relock control plane and SOTT derivations under
+your code’s control
+
+### Subresource Integrity (SRI)
+
+Relock.js should always be loaded from **your own application domain** (e.g.
+`https://example.com/relock/relock.js`), never from a third-party origin. This ensures that the
+script is covered by SameSite browser protections and cannot be substituted cross-site.
+
+For additional assurance, Relock Cloud provides an official SRI hash in the Admin Panel. You
+should copy this hash into your script tag so that the browser verifies the file contents even when
+served through your own reverse proxy: 
+
+```html
+<script src="/relock/relock.js"
+        integrity="sha384-..."
+        crossorigin="anonymous"
+        nonce="{{RANDOM_NONCE}}"></script>
+```
+
+### MPA Web Applications 
+
+For non-SPA (Multi-Page Application) web applications, including relock.js in the `<head>`
+section ensures the Relock agent is triggered automatically on every page load. The agent starts
+session validation and generates a fresh token and signature for each page relaod. 
+
+On every page reload, new SamesSite ‘lax’ non-HTTP-only cookies are generated:
+
+  `X-Key-Token` → A fresh, hex-encoded token derived from secret material
+
+  `X-Key-Signature` → An hex-encoded Ed25519 signature of the token. 
+
+These cookies can be used for `GET request–level authentication` of the user’s device identity. In
+practice, the token and signature serve as a cryptographic proof of the browser’s identity, allowing
+your backend or microservices to validate that the request originates from a trusted device and
+legitimate browser sandbox. 
+
+### Multi-Tab Browsing Support
+
+Relock natively supports multi-tab browsing without compromising security. Each browser tab is
+enumerated with a unique **tab identifier**. If a new tab is opened and the identifier changes, the
+Relock agent automatically invokes a fresh session agreement with the gateway by default. 
+
+This ensures that: 
+- SOTTs remain single-use and tied to the active tab context
+- Tokens or session state cannot be replayed across tabs
+- Race conditions between parallel requests in different tabs are avoided.
+
+From the user’s perspective, the experience is seamless: opening new tabs continues the session,
+but cryptographic material is refreshed to preserve origin binding and one-time-use guarantees. 
+
+This mechanism prevents session artifacts from being replayed across tabs, ensures one-time-use
+guarantees remain intact, and eliminates potential race conditions between parallel requests.
+From the user’s perspective the experience is seamless, while security is preserved at requestlevel. 
+
+### SPA Web Applications
+
+Single-Page Applications (SPAs) update the page content dynamically without reloading the entire
+page. Because the `<head>` section is not reloaded on navigation, the Relock agent must be
+manually notified whenever a view change occurs. This is achieved by triggering a custom
+JavaScript event called `X-Key-View-Change`.
+
+You can dispatch the event as follows:
+
+```js
+let event = new CustomEvent(
+  'X-Key-View-Change',
+  { bubbles: false }
+);
+window.dispatchEvent(event);
+```
+
+Many JavaScript frameworks allow you to handle this automatically within their routing
+mechanisms. For example, in `Angular` you can listen for route changes and dispatch the event
+each time a navigation occurs:
+
+```js
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+
+constructor(private router: Router) {
+  this.router.events
+    .pipe(filter(event => event instanceof NavigationEnd))
+    .subscribe(() => {
+      let event = new CustomEvent(
+        'X-Key-View-Change',
+        { bubbles: false }
+      );
+      window.dispatchEvent(event);
+    });
+}
+```
+
+### Key Established Event 
+
+Each time the view changes, `Relock.js agent` accesses the secret material and verifies the
+session state and if needed rotatates the symmetric key. The key rotation is not enforced always
+when the `X-Key-View-Change` event is fired except the session start. This operation usually takes
+a few milliseconds as it retrieves the secret material from storage and decrypts/rotates it
+
+As `Relock.js agent` is asynchronus and if it started before the the `DOMContentLoaded` event the
+keys are typically available in browser memory before the web page is entirely processed.
+Depending on the user device computing power. 
+
+Once the JavaScript agent triggers the `X-Key-Established` event, authentication token generation
+becomes available (during this event, cookies for `GET` requests are also created). 
+
+```js
+window.addEventListener('X-Key-Established', async function (event) {
+  let token = await window.relock.token();
+  let signature = await window.relock.sign(token);
+});
+```
+
+In addition, the Relock.js agent fires the `X-Key-Rekeying-Done` event whenever the re-keying or
+re-initialization process has finished. 
+
+```js
+window.addEventListener('X-Key-Rekeying-Done', function (event) {
+  console.log(event.detail);
+});
+```
+
+Both events has the same `JSON` payload containing information about the device authentication
+process and the resulting state. The `Key-Established` event fires only when the state of
+veryfication is successful.
+
+The event payload has a major key difference between the `fresh` and the `state` attributes:
+
+- `fresh` → `true` only if the device has never interacted with the gateway before or
+storage was completly cleared. 
+
+- `state` → `true` if the gateway has decided to enroll new secret material and perform
+a fresh key agreement (e.g., after reset). 
+
+### Established Event Payload
+
+**Example JSON Payload:**
+
+```json
+{
+  "fresh": false,         // First-time interaction with the gateway?
+  "valid": true,          // Was the secret validation successful?
+  "state": false,         // Was a new key agreement performed?
+  "owner": false,         // Device has assigned owner?
+  "network": false,       // Network location change?
+  "authenticated": false, // Is the user authenticated?
+  "status": "OK",         // Human-readable status message
+  "code": 200             // Operation status code
+}
+```
+
+**Attributes explained**
+
+| Field | Description |
+| ----- | ----------- |
+| authenticated | Boolean. Indicates if the user is authenticated in the current session. |
+| code | Integer. HTTP-like status code of the operation. |
+| fresh | Boolean. true only for a device interacting with the gateway for the first time. |
+| state | Boolean. true if a new key agreement was performed (e.g., re-keying failure or key collision). |
+| owner | Boolean. true if a user was signed-in before and the device has an owner |
+| network | Boolean. true if server-side reports network location change. |
+| status | String. Human-readable description of the operation result. |
+| valid | Boolean. true if the key validation was successful. |
+
+### Backend-Side Request Verification
+
+The web application backend can verify each incoming request using browser delivered
+cryptographic proofs, with the level of verification depending on the accepted risk of the request
+type. 
+
+Typically, `GET` requests that do not change the application state do not need to be strongly
+authenticated — in such cases, proof of possession is sufficient. However, all POST requests, as
+well as `GET` requests with path parameters that could alter or expose web app data, should be
+validated by both **token** and **signature** verification. 
+
+Below are examples of basic and advanced request-level authentication approaches.
+
+### Basic Request Authentication
+
+Non-critical requests in a web application can be authenticated in a simple way by verifying the
+user device’s signature. During secret material enrollment, the device public key becomes
+available as a property of the `window.relock` object. 
+
+```js
+window.addEventListener('X-Key-Established', function (event) {
+  console.log(window.relock.public);
+});
+```
+
+The device public key is hex-encoded and remains unchanged unless the secret material used for
+token generation is replaced. This public key can be securely stored by the backend application
+and used to verify signatures on each request (verification can be performed within milliseconds).
+
+:::warning
+If basic-level authentication is used, remember to implement token replay prevention.
+Replay prevention ensures that an attacker cannot capture a valid token from one
+request and reuse it to impersonate the client in subsequent requests.
+
+Your backend application should reject any request that attempts to reuse a token
+that has already been validated within the current session.
+
+Without replay protection, even a simple interception of traffic (for example, through a
+compromised network node) could allow an attacker to repeatedly replay the same
+token and gain unauthorized access despite the presence of signature verification. 
+:::
+
+### Critical Request Authentication
+
+All critical requests to your backend should be authenticated not only through a simple signature
+check, but also by validating that the token is derived from the current version of the secret
+material.
+
+The Relock gateway includes built-in token replay prevention by default. To verify both the token
+and its signature, your backend application must make an API call to the Relock confirmation
+endpoint. 
+
+**Verification Endpoint:**
+
+```
+POST /relock/confirm
+```
+
+If the request returns `200 OK` or `407 Proxy Authentication Required`, the request can safely
+proceed. If it returns any other status, the request should be rejected and the authentication flow
+restarted. 
+
+```js title="JavaScript Example"
+let token = await window.relock.token();
+let signature = await window.relock.sign(token);
+let xsid = ""; // session ID, available as HTTP-only cookie
+               // included to the request send to the backend
+
+return await fetch("/relock/confirm", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  body: JSON.stringify({
+    "X-Key-Token": token.hexlify(),
+    "X-Key-Signature": signature.hexlify(),
+    "X-Key-Session": xsid
+  })
+}).then((res) => res.json());
+```
+
+### Relock Gateway Status Codes
+
+| Status Code | Description |
+| ----------- | ----------- |
+| **200 OK** | The token and signature are valid, and the user is signed in to the Relock gateway. The cryptographic assets are confirmed, and the gateway considers the session authenticated. |
+| **407 Proxy Authentication Required** | The token and signature are valid, but the user is not currently signed in to the Relock gateway. This confirms that cryptographic verification succeeded, but indicates the web application has not yet invoked the Relock sign-in flow, so the gateway has no active authentication state. |
+| **409 Conflict** | The provided token does not match the server’s current version of the secret material. This usually means the client is using outdated or revoked secret material to derive the token. The request must be rejected immediately. |
+| **417 Expectation Failed** | The token signature is invalid. This means the token may have been tampered with or generated by an unauthorized client. The request must be rejected immediately. |
+| **401 Unauthorized** | The confirmation call does not contain a valid token and/or signature. This occurs when required authentication fields are missing or malformed. Every confirmation request must include both a valid token and signature. |
+| **406 Not Acceptable** | The gateway is awaiting re-keying confirmation and cannot currently verify the data. This occurs when the secret material is in the process of being rotated. The browser must complete the re-keying process before new tokens can be generated. |
+| **404 Not Found** | The device data does not exist in the current session. This may happen if the session has expired, if the device is unknown to the gateway, or if the session state has been reset. The client must re-authenticate to continue. |
+| **410 Gone** | The session no longer exists. This indicates the session has been explicitly terminated or has permanently expired. The client must establish a new session and repeat the authentication process. |
+
+### Login and Logout a User in the Gateway
+
+Signing a user in to the Relock gateway simplifies the authentication flow. After a successful login,
+future sessions can automatically recognize a returning user (the owner of the device). This
+feature helps reduce friction and minimize the cost of repeated MFA (Multi-Factor Authentication)
+prompts.
+
+The sign-in and sign-out API routes can be called from either the backend or frontend, depending
+on the web application’s architecture. However, backend API calls are generally recommended, as
+handling sensitive user data directly in the frontend may violate data privacy and compliance
+requirements. 
+
+**API Routes:**
+- /relock/login → Call after successful credential verification (e.g., password)
+- /relock/logout → Call when a user signs out (no user ID required). 
+
+```js title="Example: /relock/login"
+async login(user = String(),
+    email = String(),
+    xsid =
+    String()) // session ID, available as an HTTP-only cookie
+              // included in the request sent to the backend
+  {
+    let token = await window.relock.token();
+    let signature = await window.relock.sign(token);
+    return await fetch("/relock/login", {
+      method: "POST",
+      credentials: 'include',
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        "X-Key-Token": token.hexlify(),
+        "X-Key-Signature": signature.hexlify(),
+        "X-Key-Session": xsid,
+        "user": user,
+        "email": email
+      })
+    }).then((res) => res.json());
+  }
+```
+
+### Zero-Trust Remember-Me
+
+An additional benefit of having a signed-in user is the ability to implement a secure “remember
+me” feature. If the web application allows automatic logins for returning users, cookie-based login
+can be enhanced with device-level cryptographic proof of identity.
+
+In this scenario, the backend application should verify both the token’s authenticity and the
+device signature. If the `remember me` cookie is valid, the user can be signed in without requiring a
+full login flow.
+
+The backend should also track the time of the last session and decide whether to prompt for a
+password (or MFA) or to allow seamless auto-login.
+
+The gateway can also provide the information about remote address of user device and prevent
+automatic login if network location changes.
+
+**Example Implementation:**
+
+```js
+window.addEventListener('X-Key-Established', function (event) {
+  if (event.detail.authenticated === false) {
+    if (event.detail.fresh === true) {
+      document.location = '/sign_on';
+    } else {
+      if (event.detail.state === true) {
+        document.location = '/login_input_and_mfa';
+      } else if (event.detail.owner && event.detail.network) {
+        document.location = '/autologin';
+      } else if (event.detail.owner) {
+        document.location = '/password';
+      }
+    }
+  } else {
+    document.location = '/homepage';
+  }
+});
+```
+
+### Best Practices for Secure Deployment 
+
+Relock strengthens session security by design, but its protection is only as strong as the
+surrounding environment. Apply the following hardening measures when integrating Relock into
+your applications:
+
+**HTTP Strict Transport Security (HSTS)** Force all traffic to use HTTPS, preventing downgrade and
+interception. 
+
+```
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+```
+
+**Content Security Policy (CSP) with nonces** Restrict JavaScript execution to only trusted scripts
+with a fresh per-request nonce. This prevents XSS and keeps control of the Relock agent. 
+
+```
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' 'nonce-{RANDOM_NONCE}' 'strict-dynamic';
+  connect-src 'self' https://relock.host;
+  style-src 'self';
+  img-src 'self' data:;
+  frame-ancestors 'none';
+  base-uri 'none';
+  object-src 'none';
+  upgrade-insecure-requests;
+  require-trusted-types-for 'script'
+```
+
+**Relock.js loading (SameSite only) + SRI** Always serve `relock.js` from **your own application origin**
+(e.g., `/relock/relock.js` ) via your reverse proxy. Do **not** load it from third-party domains or
+CDNs. For supply-chain assurance, copy the official SRI hash from the Relock Cloud Admin Panel
+into your script tag and include your CSP nonce:
+
+```js
+<script src="/relock/relock.js"
+        integrity="sha384-..."
+        crossorigin="anonymous"
+        nonce="{{RANDOM_NONCE}}"
+        async></script>
+```
+
+**Reverse proxy header hygiene** Inject trust headers (e.g., `X-Key-Wildcard`) **only** at your trusted
+proxy; strip any inbound copies from client requests. Optionally enforce allow-listed proxy IPs or
+mTLS between proxy ↔ gateway. 
+
+**SameSite and secure cookies** Relock’s per-request SOTT, when bound to
+`(method, path, intence)`, provides strong CSRF protection by making forged cross-site requests
+unverifiable. Still set cookies as `Secure` and `HttpOnly` with `SameSite=Lax` or `SameSite=Strict`
+for **defense in depth**, and keep classic CSRF tokens for legacy form posts or endpoints that don’t
+yet validate SOTTs. 
+
+**No secret logging** Never log tokens, nonces, signatures, or Relock headers. Emit only structured
+security events (codes, reasons, redacted device/session IDs). 
+
+Together, these measures reinforce Relock’s request-level proofs so origin binding, replay
+protection, and compromise detection are not undermined by common web application
+misconfigurations. 

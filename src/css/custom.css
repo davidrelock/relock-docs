@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/*
+ORIGINAL CUSTOM.CSS
+
+:root {
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+
+*/
+
+[data-theme='dark'] {
+  --ifm-color-primary: #9dff00;
+  --ifm-color-primary-dark: #8de600;
+  --ifm-color-primary-darker: #85d900;
+  --ifm-color-primary-darkest: #6eb300;
+  --ifm-color-primary-light: #a7ff1a;
+  --ifm-color-primary-lighter: #acff26;
+  --ifm-color-primary-lightest: #baff4d;
+  --ifm-background-color: #000000;
+
+  /* --ifm-heading-color: var(--ifm-color-primary); */
+}
+
+
+
+
+
+:root {
+  --ifm-color-primary: #9dff00;
+  --ifm-color-primary-dark: #8de600;
+  --ifm-color-primary-darker: #85d900;
+  --ifm-color-primary-darkest: #6eb300;
+  --ifm-color-primary-light: #a7ff1a;
+  --ifm-color-primary-lighter: #acff26;
+  --ifm-color-primary-lightest: #baff4d;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  --ifm-menu-link-sublist-icon-filter: 
+    invert(100%) 
+    sepia(100%) 
+    saturate(240%) 
+    hue-rotate(60deg) 
+    brightness(300%) 
+    contrast(120%);
+
+  --ifm-menu-link-sublist-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24"><path fill="rgba(157,255,0,1)" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path></svg>');
+
+  --ifm-announcement-bar-background-color: var(--ifm-color-primary);
+
+  --ifm-menu-link-sublist-icon-primary: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px' viewBox='0 0 24 24'%3E%3Cpath fill='rgba(157,255,0,0.7)' d='M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z'%3E%3C/path%3E%3C/svg%3E");
+  
+  /* --ifm-link-color: var(--ifm-color-primary-darkest); */
+  
+  --menu-link-active-background: #333;
+  --menu-link-active-background-hover: #ccc;
+
+  --docusaurus-announcement-bar-height: 30px;
+}
+
+[data-theme='light'] {
+  --ifm-navbar-border-color: #dadde1;
+
+  .menu__link--active {
+    background: var(--menu-link-active-background)!important;
+  }
+
+  .navbar__link--active {
+    background: var(--menu-link-active-background)!important;
+    border-radius: 0.25rem;
+  }
+
+  .menu__list-item-collapsible:has(.menu__link--active) {
+    background: var(--menu-link-active-background) !important;
+    background-color: var(--menu-link-active-background) !important;
+  }
+
+  /* .menu__link--sublist-caret:after {
+    background: var(--ifm-menu-link-sublist-icon-primary) 50% / 2rem 2rem !important;
+    filter: none !important;
+  } */
+
+  .breadcrumbs__item--active .breadcrumbs__link {
+    background-color: var(--menu-link-active-background)!important;
+  }
+}
+
+[data-theme='dark'] {
+  --ifm-background-color: #000000;
+  --ifm-navbar-background-color: var(--ifm-background-color);
+  --ifm-navbar-border-color: #444950;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+
+  --button-primary-text: #000;
+
+  .button--primary {
+    color: var(--button-primary-text);
+  }
+}
+
+.navbar {
+  border-bottom: 1px solid var(--ifm-navbar-border-color);
+}
+
+.theme-announcement-bar {
+  min-height: 3rem !important;
+  font-size: 1.125rem;
+  font-weight: 700;
+  background-color: var(--ifm-announcement-bar-background-color);
+}
+
+
+/* TEMPORARY */
+.theme-doc-sidebar-item-category-title {
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ifm-color-primary-lightest);
+}
