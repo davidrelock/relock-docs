@@ -13,10 +13,10 @@ const config: Config = {
   },
 
   url: 'https://davidrelock.github.io',
-  baseUrl: '/',
+  baseUrl: '/relock-docs/',
 
   organizationName: 'davidrelock',
-  projectName: 'davidrelock.github.io',
+  projectName: 'relock-docs',
   trailingSlash: false,
 
   onBrokenLinks: 'warn',
@@ -32,14 +32,6 @@ const config: Config = {
           routeBasePath: 'docs',           // /docs/*
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/davidrelock/relock-docs/edit/main/',
-        },
-        blog: {
-          showReadingTime: true,
-          feedOptions: { type: ['rss', 'atom'], xslt: true },
-          editUrl: 'https://github.com/davidrelock/relock-docs/edit/main/',
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
         },
         theme: { customCss: './src/css/custom.css' },
       } satisfies Preset.Options,
@@ -69,28 +61,20 @@ const config: Config = {
         srcDark: 'img/relock_logo.png',
       },
       items: [
-        { type: 'doc', docId: 'index', label: 'Docs', position: 'left' },
         {
           type: 'docSidebar',
           position: 'left',
           sidebarId: 'guidesSidebar',
           label: 'Guides',
         },
-        {
-          type: 'docSidebar',
-          position: 'left',
-          sidebarId: 'cloudGatewaySidebar',
-          label: 'Cloud Gateway',
-        },
-        {
-          type: 'docSidebar',
-          position: 'left',
-          sidebarId: 'apiSidebar',
-          label: 'API',
-        },
-        { to: '/blog', label: 'Changelog', position: 'left' },
+        // {
+        //   type: 'docSidebar',
+        //   position: 'left',
+        //   sidebarId: 'cloudGatewaySidebar',
+        //   label: 'Cloud Gateway',
+        // },
         { href: 'mailto:hi@relock.security?subject=Let\'s set up a demo', label: 'Schedule a demo', position: 'right', className: 'button button--primary' },
-        { href: 'https://github.com/hooked82/relock-dev-examples', label: 'GitHub', position: 'right' },
+        { href: 'https://github.com/davidrelock/relock-docs', label: 'GitHub', position: 'right' },
       ],
     },
     footer: {
@@ -105,34 +89,16 @@ const config: Config = {
           ],
         },
         {
-          title: 'Cloud Gateway',
-          items: [
-            { label: 'Getting Started', to: '/docs/gateway/getting-started' },
-            { label: 'Gateway Setup', to: '/docs/gateway/gateway-setup' },
-            { label: 'Return Routes', to: '/docs/gateway/return-routes' },
-          ],
-        },
-        {
-          title: 'API Reference',
-          items: [
-            { label: 'API Overview', to: '/docs/api' },
-            { label: 'JavaScript Agent API', to: '/docs/api/js-agent-api' },
-            { label: 'Gateway API', to: '/docs/api/gateway-api' },
-          ],
-        },
-        {
           title: 'Community',
           items: [
             { label: 'LinkedIn', href: 'https://www.linkedin.com/company/relocksecurity' },
             { label: 'X', href: 'https://x.com/relock' },
-            { label: 'GitHub', href: 'https://github.com/hooked82/relock-dev-examples' },
+            { label: 'GitHub', href: 'https://github.com/davidrelock/relock-docs' },
           ],
         },
         {
           title: 'More',
           items: [
-            { label: 'Changelog', to: '/blog' },
-            { label: 'Security', to: '/docs/security/threat-model' },
             { label: 'Status', href: 'https://status.relock.security' },
           ],
         },
