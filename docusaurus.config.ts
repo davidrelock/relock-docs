@@ -84,6 +84,7 @@ const config: Config = {
           title: 'Guides',
           items: [
             { label: 'JavaScript Agent', to: '/docs/guides/js-agent-integration' },
+            { label: 'SameSite Integration', to: '/docs/guides/samesite-integration' },
             { label: 'Simple Integration', to: '/docs/guides/simple-integration' },
           ],
         },
