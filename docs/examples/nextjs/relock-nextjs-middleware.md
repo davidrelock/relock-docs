@@ -2,6 +2,7 @@
 title: Middleware Integration Example
 description: Complete Next.js application demonstrating dual authentication with Auth0 + Relock middleware integration
 sidebar_label: Middleware Integration
+slug: middleware
 ---
 
 # ![Relock Next.js Middleware Integration](../img/relock-nextjs-middleware-header.png)
@@ -36,7 +37,7 @@ npm install
 
 Create a `.env.local` file with the following variables:
 
-```env
+```properties
 # Auth0 Configuration
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_CLIENT_ID=your-client-id
@@ -77,8 +78,6 @@ npm run dev
 
 Visit `http://localhost:3000` to see the application in action!
 
-![Relock Next.js Auth0 Status](https://github.com/relock-security/relock-examples/raw/main/nextjs/relock-nextjs-middleware/relock-status.png)
-
 ## 🔒 HTTPS Development Setup
 
 For local HTTPS development, the example includes experimental Next.js HTTPS configuration:
@@ -99,7 +98,7 @@ mkcert relock.dev
 
 ### 2. Update Environment Variables
 
-```env
+```properties
 APP_BASE_URL=https://relock.dev:3000
 ```
 
@@ -132,10 +131,3 @@ This example demonstrates:
 ## 🔗 GitHub Repository
 
 **Source Code**: [relock-security/relock-examples/nextjs/relock-nextjs-middleware](https://github.com/relock-security/relock-examples/tree/main/nextjs/relock-nextjs-middleware)
-
-## 📚 Related Documentation
-
-- [Next.js Integration Guide](../integration/nextjs-integration) - Detailed integration patterns
-- [JavaScript Agent API](../api/js-agent-api) - Relock JavaScript Agent reference
-- [Auth0 Integration](../roadmap/auth0-integration) - Auth0-specific guidance
-- [Security Best Practices](../security/best-practices) - Production security considerations

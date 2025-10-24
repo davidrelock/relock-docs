@@ -13,9 +13,9 @@ The Relock Cloud Gateway is the hosted service that handles authentication for y
 
 ## Getting Started
 
-1. **[Create Your Account](./getting-started)** - Sign up and access the Cloud Gateway
-2. **[Create Your First Gateway](./gateway-setup)** - Set up a new authentication gateway
-3. **[Configure Return Routes](./return-routes)** - Set up authentication redirects
+1. **[Create Your Account](/docs/gateway/getting-started)** - Sign up and access the Cloud Gateway
+2. **[Create Your First Gateway](/docs/gateway/gateway-setup)** - Set up a new authentication gateway
+3. **[Configure Return Routes](/docs/gateway/return-routes)** - Set up authentication redirects
 
 ## Key Concepts
 
@@ -35,6 +35,6 @@ Your gateway configuration includes:
 
 ## Next Steps
 
-- **[Getting Started](./getting-started)** - Create your account and first gateway
-- **[Gateway Setup](./gateway-setup)** - Configure your authentication gateway
-- **[Return Routes](./return-routes)** - Set up authentication redirects
+- **[Getting Started](/docs/gateway/getting-started)** - Create your account and first gateway
+- **[Gateway Setup](/docs/gateway/gateway-setup)** - Configure your authentication gateway
+- **[Return Routes](/docs/gateway/return-routes)** - Set up authentication redirects

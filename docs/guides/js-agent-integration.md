@@ -233,52 +233,6 @@ let event = new CustomEvent(
 window.dispatchEvent(event);
 ```
 
-### Framework Router Integration
-
-Many JavaScript frameworks allow you to handle this automatically within their routing mechanisms:
-
-**React Router Example:**
-```javascript
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-
-function App() {
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Dispatch event on route change
-    const event = new CustomEvent('X-Key-View-Change', { bubbles: false });
-    window.dispatchEvent(event);
-  }, [location]);
-  
-  return <div>Your app content</div>;
-}
-```
-
-**Vue Router Example:**
-```javascript
-// In your Vue app
-router.afterEach(() => {
-  const event = new CustomEvent('X-Key-View-Change', { bubbles: false });
-  window.dispatchEvent(event);
-});
-```
-
-**Angular Router Example:**
-```javascript
-import { Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
-
-constructor(private router: Router) {
-  this.router.events
-    .pipe(filter(event => event instanceof NavigationEnd))
-    .subscribe(() => {
-      const event = new CustomEvent('X-Key-View-Change', { bubbles: false });
-      window.dispatchEvent(event);
-    });
-}
-```
-
 ## HTTP Strict Transport Security (HSTS)
 
 Relock depends on the integrity of the browser's origin enforcement. To prevent downgrade or redirection attacks, it is strongly recommended to enable HTTP Strict Transport Security (HSTS) on all domains that integrate Relock.
@@ -294,22 +248,13 @@ Where:
 - `includeSubDomains` applies the rule to all subdomains
 - `preload` allows the domain to be added to browser preload lists for protection from the very first request
 
-## Next Steps
-
-Now that you have the JavaScript Agent deployed, you can:
-
-1. **[Implement backend verification](/docs/guides/request-verification)** - Learn how to verify tokens and signatures on your server
-2. **[Add user management](/docs/guides/user-management)** - Implement login/logout and remember-me functionality
-3. **[Choose a framework guide](/docs/guides)** - See framework-specific implementation patterns
-4. **[Secure your deployment](/docs/guides/content-security-policy)** - Implement CSP, SRI, and other security measures
-
 ## Troubleshooting
 
 ### Common Issues
 
 **Script not loading:**
 - Verify your reverse proxy configuration
-- Check that `/relock/relock.js` resolves to `https://relock.host/relock.js`
+- Check that `/relock/relock.js` resolves to `https://relock.host/relock/relock.js`
 - Ensure the `X-Key-Wildcard` header is set correctly
 
 **Events not firing:**
@@ -324,6 +269,6 @@ Now that you have the JavaScript Agent deployed, you can:
 
 ### Getting Help
 
-- **Documentation**: Check our [API Reference](/docs/api/js-agent-api) for complete JavaScript API details
-- **Examples**: See working implementations in our [examples](/docs/examples)
+- **Documentation**: Check our [integration guides](/docs/guides) for complete implementation details
+- **Examples**: See working implementations in our [examples](/docs/examples/nextjs/middleware)
 - **Support**: Contact us at [hi@relock.security](mailto:hi@relock.security)

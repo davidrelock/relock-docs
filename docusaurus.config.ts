@@ -84,7 +84,6 @@ const config: Config = {
           title: 'Guides',
           items: [
             { label: 'JavaScript Agent', to: '/docs/guides/js-agent-integration' },
-            { label: 'Next.js Integration', to: '/docs/guides/nextjs-integration' },
             { label: 'Simple Integration', to: '/docs/guides/simple-integration' },
           ],
         },

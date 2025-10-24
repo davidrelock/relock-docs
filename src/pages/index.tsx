@@ -50,7 +50,7 @@ function HomepageHeader() {
           </Link>
           <Link
             className={clsx('button button--secondary', styles.ctaSecondary)}
-            to="/docs"
+            to="/docs/guides"
           >
             Discover
           </Link>

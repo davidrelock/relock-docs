@@ -84,7 +84,4 @@ Still unsure which path to take? Consider these questions:
 
 ## Additional Resources
 
-- [How Relock Works](../concepts/how-it-works.md) - Understand the underlying technology
-- [Security Model](../concepts/security-model.md) - Learn about our security approach
-- [API Reference](../api/overview.md) - Technical implementation details
-- [Examples](../examples/) - Code examples for different platforms
+- [Examples](/docs/examples/nextjs/middleware) - Code examples for different platforms

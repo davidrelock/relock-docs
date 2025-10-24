@@ -2,9 +2,10 @@
 title: Minimal Integration Example
 description: Simple, clean Next.js application demonstrating basic Relock integration without over-engineering
 sidebar_label: Minimal Integration
+slug: minimal
 ---
 
-# ![Relock Next.js Minimal Integration](https://github.com/relock-security/relock-examples/raw/main/nextjs/relock-nextjs-minimal/relock-nextjs-middleware-header.png)
+# ![Relock Next.js Minimal Integration](../img/relock-nextjs-minimal-header.png)
 
 A minimal Next.js application demonstrating how to integrate [Relock](https://relock.host) cryptographic authentication with Auth0 in a clean, simple implementation.
 
@@ -77,8 +78,6 @@ npm run dev
 
 Visit `http://localhost:3000` to see the application in action!
 
-![Relock Next.js Auth0 Status](https://github.com/relock-security/relock-examples/raw/main/nextjs/relock-nextjs-minimal/relock-status.png)
-
 ## 🔒 HTTPS Development Setup
 
 For local HTTPS development, the example includes experimental Next.js HTTPS configuration:
@@ -99,7 +98,7 @@ mkcert relock.dev
 
 ### 2. Update Environment Variables
 
-```env
+```properties
 APP_BASE_URL=https://relock.dev:3000
 ```
 
@@ -141,7 +140,4 @@ This minimal example demonstrates:
 
 ## 📚 Related Documentation
 
-- [Simple Integration Guide](../integration/simple-integration) - Basic integration patterns
-- [JavaScript Agent API](../api/js-agent-api) - Relock JavaScript Agent reference
-- [Next.js Integration Guide](../integration/nextjs-integration) - Advanced Next.js patterns
-- [Getting Started](../getting-started/quickstart-js-agent) - Learn the basics
+- [Simple Integration Guide](/docs/guides/simple-integration) - Basic integration patterns

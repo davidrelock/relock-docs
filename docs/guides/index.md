@@ -140,7 +140,4 @@ window.addEventListener('X-Key-Rekeying-Done', function (event) {
 
 ## What's Next
 
-* Not sure Relock is for you? See our [Use Cases](../use-cases) or [Examples](../examples)
-* Questions about how it works? See the [Concepts](../concepts) section
-* Ready for production? Check our [Security Best Practices](../security/best-practices)
 * Need help? Contact us at [hi@relock.security](mailto:hi@relock.security)

@@ -200,11 +200,8 @@ Once you have Simple Integration working, you can:
 
 1. **[Upgrade to SameSite Integration](/docs/guides/samesite-integration)** - For brand consistency and user management
 2. **[Implement JavaScript Agent](/docs/guides/js-agent-integration)** - For maximum security and seamless UX
-3. **[Add security hardening](/docs/guides/content-security-policy)** - Implement additional security measures
-4. **[Choose a framework guide](/docs/guides)** - See framework-specific implementation patterns
 
 ## Getting Help
 
-- **Documentation**: Check our [API Reference](/docs/api/gateway-api) for complete gateway API details
-- **Examples**: See working implementations in our [examples](/docs/examples)
+- **Examples**: See working implementations in our [examples](/docs/examples/nextjs/middleware)
 - **Support**: Contact us at [hi@relock.security](mailto:hi@relock.security)

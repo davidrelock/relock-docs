@@ -49,18 +49,12 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Examples',
-      link: {
-        type: 'doc',
-        id: 'examples/index',
-      },
+      collapsed: true,
       items: [
         {
           type: 'category',
           label: 'Next.js',
-          link: {
-            type: 'doc',
-            id: 'examples/nextjs/index',
-          },
+          collapsed: true,
           items: [
             'examples/nextjs/relock-nextjs-middleware',
             'examples/nextjs/relock-nextjs-minimal',

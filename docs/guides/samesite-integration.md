@@ -4,6 +4,9 @@ description: Deploy Relock with SameSite redirects using reverse proxy for brand
 sidebar_label: SameSite Integration
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # SameSite Integration
 
 SameSite Integration makes the Relock authentication flow appear under your own domain while keeping the same logic as the simple redirect option. Cryptographic keys are stored within your domain and are bound to the browser's origin, ensuring they cannot be shared across unrelated sites.
@@ -52,48 +55,34 @@ Therefore, you must provide a **complete URL including the domain name** when co
 
 Your reverse proxy must route all requests where the path starts with `/relock/` to the Relock gateway on the third-party server at `relock.host`.
 
-### NGINX Configuration
-
+<Tabs>
+  <TabItem value="nginx" label="NGINX">
 ```nginx
 location /relock/ {
   proxy_pass https://relock.host/;
   proxy_set_header Host relock.host;
-  proxy_set_header X-Key-Wildcard "your-unique-uuid";
+  proxy_set_header X-Key-Wildcard "your-gateway-uuid";
   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
-
-### Apache Configuration
-
-First, enable the required modules:
-
-```bash
-sudo a2enmod proxy
-sudo a2enmod proxy_http
-sudo a2enmod headers
-sudo systemctl restart apache2
-```
-
-Then add to your VirtualHost:
-
+  </TabItem>
+  <TabItem value="apache" label="Apache">
 ```apacheconf
 <VirtualHost *:443>
   ServerName example.com
-
   SSLProxyEngine On
   ProxyRequests Off
 
   <Location /relock/>
     ProxyPass https://relock.host/relock/
     ProxyPassReverse https://relock.host/relock/
-    RequestHeader set X-Key-Wildcard "your-unique-uuid"
+    RequestHeader set X-Key-Wildcard "your-gateway-uuid"
   </Location>
 </VirtualHost>
 ```
-
-### Next.js Middleware Configuration
-
+  </TabItem>
+  <TabItem value="nextjs" label="Next.js Middleware">
 ```typescript title="middleware.ts"
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -125,6 +114,8 @@ export const config = {
   matcher: '/relock/:path*',
 };
 ```
+  </TabItem>
+</Tabs>
 
 ## Step 4: Implement Redirect Flow
 
@@ -158,8 +149,8 @@ The redirect back to your application will be sent as a **POST** request contain
 
 Always verify Relock's response signature using Ed25519 with the public key generated in the Admin Panel. This ensures that every response truly originates from Relock and has not been tampered with in transit.
 
-**Python Flask Example:**
-
+<Tabs>
+  <TabItem value="python" label="Python Flask Example">
 ```python
 import base64
 import binascii
@@ -185,9 +176,8 @@ def verify_relock_response(request):
         print("Signature invalid:", e)
         return False
 ```
-
-**Node.js Express Example:**
-
+  </TabItem>
+  <TabItem value="node.js" label="Node.js Express Example">
 ```javascript
 const crypto = require('crypto');
 const { createVerify } = require('crypto');
@@ -214,6 +204,8 @@ function verifyRelockResponse(req, res, next) {
   }
 }
 ```
+  </TabItem>
+</Tabs>
 
 ## Step 6: Login Hook (Optional)
 
@@ -311,13 +303,9 @@ Unlike Simple Integration, SameSite Integration allows you to:
 
 Now that you have SameSite Integration deployed, you can:
 
-1. **[Implement user management](/docs/guides/user-management)** - Add login/logout functionality
-2. **[Secure your deployment](/docs/guides/content-security-policy)** - Implement additional security measures
-3. **[Choose a framework guide](/docs/guides)** - See framework-specific implementation patterns
-4. **[Upgrade to JavaScript Agent](/docs/guides/js-agent-integration)** - For maximum security and seamless UX
+1. **[Upgrade to JavaScript Agent](/docs/guides/js-agent-integration)** - For maximum security and seamless UX
 
 ## Getting Help
 
-- **Documentation**: Check our [API Reference](/docs/api/gateway-api) for complete gateway API details
-- **Examples**: See working implementations in our [examples](/docs/examples)
+- **Examples**: See working implementations in our [examples](/docs/examples/nextjs/minimal)
 - **Support**: Contact us at [hi@relock.security](mailto:hi@relock.security)
