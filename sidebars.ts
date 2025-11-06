@@ -22,6 +22,15 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Guides',
+      collapsed: true,
+      items: [
+        'guides/gateway-login',
+        'guides/gateway-logout',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Use Cases',
       collapsed: true,
       items: [
