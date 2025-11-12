@@ -50,15 +50,57 @@ yarn start
 
 This starts a local development server at `http://localhost:3000`. Most changes are reflected live without restarting the server.
 
-### Building for Production
+### Generating API Documentation
+
+The API documentation is generated from the OpenAPI specification file (`relock-api.yaml`). 
+You must generate the API docs before building for production or deploying.
+
+**After making changes to `relock-api.yaml`**, regenerate the API docs:
 
 ```bash
+# Clean existing generated docs (optional, but recommended to ensure fresh generation)
+npm run docusaurus clean-api-docs relock
+
+# Generate API docs from OpenAPI spec
+npm run docusaurus gen-api-docs relock
+# or
+yarn docusaurus gen-api-docs relock
+```
+
+This command:
+- Reads the OpenAPI spec from `relock-api.yaml`
+- Generates MDX documentation files in `docs/api/`
+- Creates a sidebar configuration for the API reference
+
+**Important**: 
+- Always regenerate the API docs after updating `relock-api.yaml` to ensure 
+  the documentation reflects the latest API changes.
+- If changes don't appear in the dev server, clean the cache and restart:
+  ```bash
+  npm run docusaurus clear
+  npm run docusaurus clean-api-docs relock
+  npm run docusaurus gen-api-docs relock
+  npm start
+  ```
+
+### Building for Production
+
+Before building, ensure you have generated the latest API documentation:
+
+```bash
+# Generate API docs from OpenAPI spec
+npm run docusaurus gen-api-docs relock
+
+# Build the static site
 npm run build
 # or
 yarn build
 ```
 
 This generates static content in the `build` directory for deployment.
+
+**Note**: The API documentation generation step is required before building. 
+If you skip this step, the API reference pages will not be included in the build.
 
 ## Documentation Sections
 

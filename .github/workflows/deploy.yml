@@ -42,6 +42,8 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
       - name: Install dependencies
         run: npm ci
+      - name: Generate API documentation
+        run: npm run docusaurus gen-api-docs relock
       - name: Build with Docusaurus
         run: npm run build
       - name: Upload artifact

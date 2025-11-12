@@ -1,4 +1,5 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import relockSidebar from './docs/api/sidebar';
 
 const sidebars: SidebarsConfig = {
   // Guides sidebar - tutorial-style content
@@ -80,6 +81,9 @@ const sidebars: SidebarsConfig = {
     'gateway/gateway-setup',
     'gateway/return-routes',
   ],
+
+  // Relock API Reference sidebar - generated from OpenAPI spec
+  relocksidebar: relockSidebar,
 };
 
 export default sidebars;

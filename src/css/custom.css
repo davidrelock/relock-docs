@@ -139,3 +139,7 @@ ORIGINAL CUSTOM.CSS
   text-transform: uppercase;
   color: var(--ifm-color-primary-lightest);
 }
+
+.openapi-explorer__request-btn {
+  color: var(--ifm-background-color) !important;
+}

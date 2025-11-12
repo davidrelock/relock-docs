@@ -1,6 +1,7 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import type * as OpenApiPlugin from 'docusaurus-plugin-openapi-docs';
 
 const config: Config = {
   title: 'Relock',
@@ -32,10 +33,30 @@ const config: Config = {
           routeBasePath: 'docs',           // /docs/*
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/davidrelock/relock-docs/edit/main/',
+          docItemComponent: "@theme/ApiItem",
         },
         theme: { customCss: './src/css/custom.css' },
       } satisfies Preset.Options,
     ],
+  ],
+
+  plugins: [
+    [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: "api", // plugin id
+        docsPluginId: "classic", // configured for preset-classic
+        config: {
+          relock: {
+            specPath: "relock-api.yaml",
+            outputDir: "docs/api",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+        }
+      },
+    ]
   ],
 
   themeConfig: {
@@ -66,6 +87,12 @@ const config: Config = {
           position: 'left',
           sidebarId: 'guidesSidebar',
           label: 'Guides',
+        },
+        {
+          type: 'docSidebar',
+          position: 'left',
+          sidebarId: 'relocksidebar',
+          label: 'API Reference',
         },
         // {
         //   type: 'docSidebar',
@@ -149,7 +176,7 @@ const config: Config = {
       onBrokenMarkdownImages: 'throw',
     },
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: ['@docusaurus/theme-mermaid', 'docusaurus-theme-openapi-docs'],
 };
 
 export default config;

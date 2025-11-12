@@ -20,3 +20,4 @@ yarn-debug.log*
 yarn-error.log*
 
 /docs/relock-comprehensive-guide.mdx
+/docs/api
